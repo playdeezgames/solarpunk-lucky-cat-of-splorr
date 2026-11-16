@@ -10,6 +10,7 @@ import "core:testing"
 
 DUMP_PLAY :: #config(DUMP_PLAY, "")
 DUMP_HOUSES :: #config(DUMP_HOUSES, 3)
+DUMP_SHOP :: #config(DUMP_SHOP, false)
 
 write_ppm :: proc(path: string, f: ^Frame) -> bool {
 	data := make([]u8, 15 + SCREEN_W * SCREEN_H * 3)
@@ -54,6 +55,11 @@ dump_play :: proc(t: ^testing.T) {
 	g.air[4] = AIR_TIME - 0.1
 	g.fork = 2
 	g.piece = Piece{kind = .Green, look = 1, col = 4, y = 6.3}
+	g.chat.lands = LEARN_LANDS
+	say(&g, NEIGHBOURS[2], BLOOM_LINES[2])
+	g.levels[.Worms] = 1
+	g.shop.open = DUMP_SHOP
+	g.shop.cursor = 2
 	f := new(Frame)
 	defer free(f)
 	draw_game(f, &g)

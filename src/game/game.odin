@@ -14,7 +14,7 @@ SINK_TIME :: 0.35 // seconds between compost sinking a row
 HATCH_TIME :: 0.6 // seconds compost sits at the bottom before it drops out
 AIR_TIME :: 8.0 // seconds a turned column stays aired
 AIR_BOOST :: 2.0 // heat multiplier while aired
-FORK_MAX :: 3 // fork strength pips
+FORK_MAX :: 3 // fork strength pips before upgrades
 FORK_REFILL :: 4.0 // seconds to refill one pip
 GREEN_CHANCE :: 0.5 // chance a new scrap is green
 QUEUE :: 3 // scraps shown waiting
@@ -61,6 +61,10 @@ Sound :: enum i32 {
 	Spill,
 	Deny,
 	Slime,
+	Open,
+	Close,
+	Buy,
+	Bloom,
 }
 
 SOUND_CAP :: 16
@@ -69,6 +73,7 @@ Game :: struct {
 	rng:         u64,
 	heap:        [COLS][ROWS]Cell, // heap[col][row], row 0 at the bottom; each column is a gapless stack
 	air:         [COLS]f32, // seconds of airing left
+	forked:      [COLS]f32, // seconds the fork stays drawn after a turn
 	hatch:       [COLS]f32, // seconds the bottom compost has waited
 	sink_t:      f32,
 	piece:       Piece,
@@ -76,7 +81,11 @@ Game :: struct {
 	fork:        int, // strength pips
 	fork_t:      f32,
 	soil:        i64, // banked
-	houses:      int, // how many houses have bloomed (step 3 buys them)
+	soil_frac:   f32, // the sieve's part-soil, carried until it makes a whole one
+	houses:      int, // how many houses have bloomed
+	levels:      [Upgrade]int,
+	shop:        Shop,
+	chat:        Chat,
 	compost:     i64, // total compost made (for the end screen)
 	spilled:     i64,
 	time:        f64, // seconds played
@@ -121,7 +130,7 @@ play :: proc(g: ^Game, s: Sound) {
 }
 
 new_scrap :: proc(g: ^Game) -> Piece {
-	kind := Kind.Green if rand_f32(g) < GREEN_CHANCE else Kind.Brown
+	kind := Kind.Green if rand_f32(g) < green_chance(g) else Kind.Brown
 	return Piece{kind = kind, look = u8(rand_int(g, LOOKS))}
 }
 
@@ -169,6 +178,10 @@ touching :: proc(g: ^Game, col, row: int) -> (browns, greens: int) {
 }
 
 command :: proc(g: ^Game, c: Command) {
+	if g.shop.open {
+		shop_command(g, c)
+		return
+	}
 	p := &g.piece
 	switch c {
 	case .West, .East:
@@ -189,7 +202,7 @@ command :: proc(g: ^Game, c: Command) {
 	case .North:
 		turn(g, p.col)
 	case .Cancel:
-	// The menu comes in step 3.
+		open_shop(g)
 	}
 }
 
@@ -202,6 +215,7 @@ land :: proc(g: ^Game) {
 		play(g, .Spill)
 	} else {
 		g.heap[p.col][h] = Cell{kind = p.kind, look = p.look}
+		g.chat.lands += 1
 		play(g, .Land)
 	}
 	next_piece(g)
@@ -217,7 +231,7 @@ turn :: proc(g: ^Game, col: int) -> bool {
 	}
 	g.fork -= 1
 	if g.fork_t <= 0 {
-		g.fork_t = FORK_REFILL
+		g.fork_t = fork_refill(g)
 	}
 	bottom := g.heap[col][0]
 	for r in 0 ..< h - 1 {
@@ -228,7 +242,8 @@ turn :: proc(g: ^Game, col: int) -> bool {
 		g.heap[col][r].slime = false
 		g.heap[col][r].pack = 0
 	}
-	g.air[col] = AIR_TIME
+	g.air[col] = air_time(g)
+	g.forked[col] = 0.35
 	g.hatch[col] = 0
 	play(g, .Turn)
 	return true
@@ -236,22 +251,27 @@ turn :: proc(g: ^Game, col: int) -> bool {
 
 tick :: proc(g: ^Game, dt_in: f64) {
 	dt := f32(min(dt_in, 0.25))
+	chat_tick(g, dt)
+	if g.shop.open {
+		return // the shop pauses the heap
+	}
 	g.time += f64(dt)
 
 	// Fork strength refills one pip at a time.
-	if g.fork < FORK_MAX {
+	if g.fork < fork_max(g) {
 		g.fork_t -= dt
 		if g.fork_t <= 0 {
 			g.fork += 1
-			g.fork_t = FORK_REFILL if g.fork < FORK_MAX else 0
+			g.fork_t = fork_refill(g) if g.fork < fork_max(g) else 0
 		}
 	}
-	for &a in g.air {
-		a = max(a - dt, 0)
+	for col in 0 ..< COLS {
+		g.air[col] = max(g.air[col] - dt, 0)
+		g.forked[col] = max(g.forked[col] - dt, 0)
 	}
 
 	// The falling scrap.
-	g.piece.y -= FALL_SPEED * dt
+	g.piece.y -= fall_speed(g) * dt
 	if g.piece.y <= f32(height(g, g.piece.col)) {
 		land(g)
 	}
@@ -282,7 +302,7 @@ rot :: proc(g: ^Game, dt: f32) {
 			if browns == 0 || c.slime {
 				continue
 			}
-			rate := HEAT_RATE * f32(browns)
+			rate := HEAT_RATE * f32(browns) * worm_boost(g)
 			if g.air[col] > 0 {
 				rate *= AIR_BOOST
 			}
@@ -349,7 +369,7 @@ empty_hatch :: proc(g: ^Game, dt: f32) {
 			g.heap[col][r] = g.heap[col][r + 1]
 		}
 		g.heap[col][ROWS - 1] = {}
-		g.soil += 1
+		bank_soil(g)
 		play(g, .Hatch)
 	}
 }
