@@ -71,6 +71,34 @@
 	const ex = memory.exports;
 	const W = ex.platform_screen_w(), H = ex.platform_screen_h();
 
+	// The street is saved in localStorage every few seconds and when the page is hidden; a save this
+	// build cannot read, or none, starts a fresh street. "Start a fresh street" is in the game's shed.
+	const SAVE_KEY = "composters-save";
+	function store(fn) { try { return fn(); } catch (e) { return null; } }
+	const saved = store(() => localStorage.getItem(SAVE_KEY));
+	if (saved) {
+		store(() => {
+			const bin = atob(saved);
+			if (bin.length > ex.platform_save_cap()) return;
+			const buf = new Uint8Array(memory.memory.buffer, ex.platform_load_ptr(), bin.length);
+			for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+			ex.platform_load(bin.length);
+		});
+	}
+	function saveNow() {
+		store(() => {
+			const n = ex.platform_save();
+			if (n <= 0) return;
+			const bytes = new Uint8Array(memory.memory.buffer, ex.platform_save_ptr(), n);
+			let s = "";
+			for (let i = 0; i < n; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+			localStorage.setItem(SAVE_KEY, btoa(s));
+		});
+	}
+	setInterval(saveNow, 3000);
+	document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveNow(); });
+	window.addEventListener("pagehide", saveNow);
+
 	// Sound effects: small synthesised blips, one entry per game.Sound (src/game/game.odin), in that
 	// order. Each is a list of notes [start Hz, end Hz, ms, wave, volume] played one after another.
 	// The game decides what plays; the page only plays the queue.
@@ -87,6 +115,9 @@
 		[[900, 600, 60, "triangle", 0.12]],                                        // Close
 		[[523, 523, 60, "square", 0.09], [659, 659, 60, "square", 0.09], [784, 784, 100, "square", 0.09]], // Buy
 		[[392, 392, 100, "triangle", 0.13], [523, 523, 100, "triangle", 0.13], [659, 659, 100, "triangle", 0.13], [784, 784, 320, "triangle", 0.13]], // Bloom (a house greens)
+		[[90, 60, 120, "sawtooth", 0.10]],                                         // Crack (the packed layer gives a little)
+		[[1046, 1046, 80, "square", 0.08], [1318, 1318, 80, "square", 0.08], [1568, 1568, 80, "square", 0.08], [2093, 2093, 260, "triangle", 0.10]], // Cat (lucky!)
+		[[523, 523, 160, "triangle", 0.14], [659, 659, 160, "triangle", 0.14], [784, 784, 160, "triangle", 0.14], [1046, 1046, 160, "triangle", 0.14], [784, 784, 160, "triangle", 0.14], [1046, 1046, 600, "triangle", 0.14]], // Green (the whole street)
 	];
 	let audio = null;
 	function unlockAudio() {
@@ -124,13 +155,13 @@
 		if (n > 0) ex.platform_sounds_clear();
 	}
 
-	// game.Command order (src/game/game.odin): North South West East Ok Cancel. The controls are only
-	// these six (the user's rule): arrows or WASD, Space for OK, Esc to cancel.
+	// game.Command order (src/game/game.odin): North South West East Ok Cancel. Arrows or WASD, Space or
+	// Enter for OK, Esc (or E or Backspace, since Esc leaves fullscreen on itch.io) for the shed.
 	const C = { N: 0, S: 1, W: 2, E: 3, OK: 4, CANCEL: 5 };
 	const KEYS = {
 		ArrowUp: C.N, ArrowDown: C.S, ArrowLeft: C.W, ArrowRight: C.E,
 		KeyW: C.N, KeyS: C.S, KeyA: C.W, KeyD: C.E,
-		Space: C.OK, Escape: C.CANCEL,
+		Space: C.OK, Enter: C.OK, Escape: C.CANCEL, KeyE: C.CANCEL, Backspace: C.CANCEL,
 	};
 	window.addEventListener("keydown", (e) => {
 		if (e.code === "KeyF" && !e.repeat) { e.preventDefault(); feedback.open(); return; }

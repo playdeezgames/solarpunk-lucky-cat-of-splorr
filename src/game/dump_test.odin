@@ -11,6 +11,9 @@ import "core:testing"
 DUMP_PLAY :: #config(DUMP_PLAY, "")
 DUMP_HOUSES :: #config(DUMP_HOUSES, 3)
 DUMP_SHOP :: #config(DUMP_SHOP, false)
+DUMP_END :: #config(DUMP_END, false)
+DUMP_CAT :: #config(DUMP_CAT, false) // the cat found, waving by the barrow
+DUMP_CRACKS :: #config(DUMP_CRACKS, 0)
 
 write_ppm :: proc(path: string, f: ^Frame) -> bool {
 	data := make([]u8, 15 + SCREEN_W * SCREEN_H * 3)
@@ -60,6 +63,19 @@ dump_play :: proc(t: ^testing.T) {
 	g.levels[.Worms] = 1
 	g.shop.open = DUMP_SHOP
 	g.shop.cursor = 2
+	g.corner_run = DUMP_CRACKS
+	if DUMP_CAT || DUMP_END {
+		g.cat_found = true
+		g.cat_t = 5
+	}
+	if DUMP_END {
+		g.houses = HOUSES
+		g.time = 23 * 60 + 41
+		g.best_time = g.time
+		g.compost = 812
+		g.spilled = 14
+		g.finished = true
+	}
 	f := new(Frame)
 	defer free(f)
 	draw_game(f, &g)

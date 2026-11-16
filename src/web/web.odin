@@ -13,6 +13,8 @@ state: struct {
 	rules:  game.Game,
 	screen: game.Frame,
 	ready:  bool,
+	save:   [game.SAVE_CAP]u8, // the save, for the page to put in localStorage
+	load:   [game.SAVE_CAP]u8, // where the page writes a save it read back
 }
 
 main :: proc() {
@@ -37,6 +39,39 @@ platform_command :: proc "c" (command: i32) {
 		return
 	}
 	game.command(&state.rules, game.Command(command))
+}
+
+// Copies the game into the save buffer; returns its length for the page to store.
+@(export)
+platform_save :: proc "c" () -> i32 {
+	context = runtime.default_context()
+	return i32(game.save_game(&state.rules, state.save[:]))
+}
+
+@(export)
+platform_save_ptr :: proc "c" () -> rawptr {
+	return &state.save
+}
+
+@(export)
+platform_save_cap :: proc "c" () -> i32 {
+	return game.SAVE_CAP
+}
+
+@(export)
+platform_load_ptr :: proc "c" () -> rawptr {
+	return &state.load
+}
+
+// Restores the save the page wrote into the load buffer (`n` bytes). 1 when this build can read it;
+// 0 leaves the fresh street as it was.
+@(export)
+platform_load :: proc "c" (n: i32) -> i32 {
+	context = runtime.default_context()
+	if n <= 0 || int(n) > len(state.load) {
+		return 0
+	}
+	return 1 if game.load_game(&state.rules, state.load[:n]) else 0
 }
 
 // This frame's sound effects (game.Sound values), for the page to play; it then calls

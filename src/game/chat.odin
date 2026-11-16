@@ -39,6 +39,17 @@ GREEN_LINES := [?]string {
 	"Who knew rot could be so hopeful?",
 	"The street's getting greener. I can hear it.",
 }
+// Old Mo lives at No. 8 and remembers the last bin. His hints come up now and then until the cat is found.
+OLD_MO :: "OLD MO, OVER THE FENCE"
+MO_HINTS := [?]string {
+	"The last bin had a tenant. Lucky little thing.",
+	"That old bottom layer's packed hard. Left side's softest.",
+	"Turn a corner enough times and it gives. Everything does.",
+	"Never found her, you know. The bin's lucky one.",
+}
+CAT_FOUND_LINE :: "There she is! Told you she was lucky."
+MO_HINT_CHANCE :: 0.25
+
 SLIME_LINES := [?]string {"Something smells, love. Give it a turn.", "Is that the bin? It's the bin.", "Too many greens in a pile. Air it out."}
 
 Chat :: struct {
@@ -82,6 +93,8 @@ chat_tick :: proc(g: ^Game, dt: f32) {
 		who = NEIGHBOURS[rand_int(g, g.houses)]
 	}
 	switch {
+	case !g.cat_found && rand_f32(g) < MO_HINT_CHANCE:
+		say(g, OLD_MO, MO_HINTS[rand_int(g, len(MO_HINTS))])
 	case slimy:
 		say(g, who, SLIME_LINES[rand_int(g, len(SLIME_LINES))])
 	case g.houses == 0:

@@ -65,6 +65,9 @@ Sound :: enum i32 {
 	Close,
 	Buy,
 	Bloom,
+	Crack,
+	Cat,
+	Green, // the whole street
 }
 
 SOUND_CAP :: 16
@@ -84,6 +87,14 @@ Game :: struct {
 	soil_frac:   f32, // the sieve's part-soil, carried until it makes a whole one
 	houses:      int, // how many houses have bloomed
 	levels:      [Upgrade]int,
+	corner_run:  int, // turns of the bottom-left column in a row (the packed layer cracks)
+	cat_found:   bool,
+	cat_t:       f32, // seconds since the cat came up (its jump out of the floor)
+	finished:    bool, // the whole street is green: the end screen
+	best_time:   f64, // fastest street, kept across fresh streets (0 for none)
+	best_cat:    bool, // whether the cat was ever found
+	streets:     int, // streets finished
+	muted:       bool,
 	shop:        Shop,
 	chat:        Chat,
 	compost:     i64, // total compost made (for the end screen)
@@ -123,7 +134,7 @@ rand_int :: proc(g: ^Game, n: int) -> int {
 }
 
 play :: proc(g: ^Game, s: Sound) {
-	if g.sound_count < SOUND_CAP {
+	if !g.muted && g.sound_count < SOUND_CAP {
 		g.sounds[g.sound_count] = s
 		g.sound_count += 1
 	}
@@ -178,6 +189,12 @@ touching :: proc(g: ^Game, col, row: int) -> (browns, greens: int) {
 }
 
 command :: proc(g: ^Game, c: Command) {
+	if g.finished {
+		if c == .Ok {
+			new_street(g)
+		}
+		return
+	}
 	if g.shop.open {
 		shop_command(g, c)
 		return
@@ -246,13 +263,17 @@ turn :: proc(g: ^Game, col: int) -> bool {
 	g.forked[col] = 0.35
 	g.hatch[col] = 0
 	play(g, .Turn)
+	turned_corner(g, col)
 	return true
 }
 
 tick :: proc(g: ^Game, dt_in: f64) {
 	dt := f32(min(dt_in, 0.25))
 	chat_tick(g, dt)
-	if g.shop.open {
+	if g.cat_found {
+		g.cat_t += dt
+	}
+	if g.shop.open || g.finished {
 		return // the shop pauses the heap
 	}
 	g.time += f64(dt)

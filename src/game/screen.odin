@@ -61,6 +61,7 @@ Gfx :: enum {
 	Garden_Bare,
 	Garden_Bloom,
 	Sun,
+	Cat_Wave,
 }
 
 // A colour swap for one draw: identity unless changed.

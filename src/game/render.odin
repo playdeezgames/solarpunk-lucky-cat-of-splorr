@@ -102,6 +102,7 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 	for x := BIN_X + 3; x < BIN_X + BIN_W; x += 7 {
 		set_px(f, x, BIN_FLOOR + 3 + (x % 3) * 2, COLOR_DARK)
 	}
+	draw_packed_corner(f, g)
 	for col in 0 ..< COLS {
 		if g.air[col] > 0 {
 			// An aired column: a pale strip at the rim, shrinking as the air runs out.
@@ -143,14 +144,20 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 	// The barrow under the hatch.
 	draw_gfx(f, .Barrow, BIN_X + BIN_W + 10, BIN_FLOOR - 10)
 
-	// The street.
+	// The street, and the cat once she is found.
 	for i in 0 ..< HOUSES {
 		draw_house(f, i, i < g.houses)
+	}
+	if g.cat_found {
+		draw_cat(f, g)
 	}
 
 	// Top line: soil and fork strength.
 	x := print(f, "SOIL ", 4, 4, COLOR_LIGHT) + 4
 	x += print(f, commas(buf[:], g.soil), x, 4, COLOR_YELLOW)
+	if g.cat_found {
+		x += print(f, " X2", x, 4, COLOR_WHITE)
+	}
 	x += 12
 	x += print(f, "FORK ", x, 4, COLOR_LIGHT)
 	for i in 0 ..< fork_max(g) {
@@ -164,12 +171,12 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 	if price, ok := next_house_price(g); ok {
 		sx += print(f, "NEXT ", sx, 4, COLOR_LIGHT)
 		sx += print(f, commas(buf[:], price), sx, 4, COLOR_YELLOW if g.soil >= price else COLOR_MID)
-		print(f, " ESC", sx, 4, COLOR_LIGHT if g.soil >= price else COLOR_MID)
+		print(f, " E", sx, 4, COLOR_LIGHT if g.soil >= price else COLOR_MID)
 	}
 
 	// Bottom line: the controls until they are learned, then the neighbours.
 	if g.chat.lands < LEARN_LANDS {
-		print(f, "LEFT/RIGHT STEER  DOWN DROP  UP TURN  ESC SHOP", 4, SCREEN_H - 10, COLOR_LIGHT)
+		print(f, "LEFT/RIGHT STEER  DOWN DROP  UP TURN  ESC/E SHED", 4, SCREEN_H - 10, COLOR_LIGHT)
 	} else if g.chat.t > 0 {
 		print(f, g.chat.who, 4, SCREEN_H - 20, COLOR_LIME)
 		print(f, g.chat.line, 4, SCREEN_H - 10, COLOR_WHITE)
@@ -182,15 +189,19 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 	if g.shop.open {
 		draw_shop(f, g)
 	}
+	if g.finished {
+		draw_end(f, g)
+	}
 }
 
 // The shop, over the street: the next house, the four upgrades, Back; the chosen row's description.
 draw_shop :: proc(f: ^Frame, g: ^Game) {
 	buf: [32]u8
 	X :: STREET_X - 8
-	Y :: 24
+	Y :: 20
 	W :: SCREEN_W - X - 6
-	H :: 150
+	H :: 164
+	ROW_H :: 13
 	fill_rect(f, X - 1, Y - 1, W + 2, H + 2, COLOR_LIGHT)
 	fill_rect(f, X, Y, W, H, COLOR_BLACK)
 	print(f, "THE BIN SHED", X + 8, Y + 6, COLOR_YELLOW)
@@ -199,10 +210,10 @@ draw_shop :: proc(f: ^Frame, g: ^Game) {
 	print(f, commas(buf[:], g.soil), sx, Y + 6, COLOR_YELLOW)
 
 	for row in 0 ..< SHOP_ROWS {
-		y := Y + 22 + row * 14
+		y := Y + 20 + row * ROW_H
 		sel := row == g.shop.cursor
 		if sel {
-			fill_rect(f, X + 4, y - 3, W - 8, 13, COLOR_DARK)
+			fill_rect(f, X + 4, y - 3, W - 8, ROW_H, COLOR_DARK)
 			print(f, ">", X + 8, y, COLOR_YELLOW)
 		}
 		name: string
@@ -213,8 +224,12 @@ draw_shop :: proc(f: ^Frame, g: ^Game) {
 		case row == SHOP_HOUSE:
 			name = "GREEN THE NEXT HOUSE"
 			price, ok = next_house_price(g)
-		case row == SHOP_ROWS - 1:
+		case row == SHOP_BACK:
 			name = "BACK TO THE HEAP"
+		case row == SHOP_SOUND:
+			name = "SOUND OFF" if g.muted else "SOUND ON"
+		case row == SHOP_RESTART:
+			name = "SURE? SPACE AGAIN" if g.shop.confirm else "START A FRESH STREET"
 		case:
 			u := Upgrade(row - 1)
 			name = UPGRADE_NAMES[u]
@@ -227,7 +242,7 @@ draw_shop :: proc(f: ^Frame, g: ^Game) {
 				fill_rect(f, X + 100 + i * 7, y + 1, 5, 5, COLOR_LIME if i < level else COLOR_DARK)
 			}
 		}
-		if row != SHOP_ROWS - 1 {
+		if row < SHOP_SOUND {
 			label := commas(buf[:], price) if ok else "DONE"
 			col: u8 = COLOR_MID
 			if ok {
@@ -241,11 +256,15 @@ draw_shop :: proc(f: ^Frame, g: ^Game) {
 	switch {
 	case g.shop.cursor == SHOP_HOUSE:
 		text = "A garden and a neighbour. Scraps come faster." if g.houses < HOUSES else "Every house is green."
-	case g.shop.cursor == SHOP_ROWS - 1:
+	case g.shop.cursor == SHOP_SOUND:
+		text = "Blips and plops."
+	case g.shop.cursor == SHOP_RESTART:
+		text = "Back to a grey street. Your best time stays."
+	case g.shop.cursor == SHOP_BACK:
 	case:
 		text = UPGRADE_TEXT[Upgrade(g.shop.cursor - 1)]
 	}
-	print_wrapped(f, text, X + 8, Y + H - 36, (W - 16) / GLYPH_W, COLOR_LIGHT)
+	print_wrapped(f, text, X + 8, Y + H - 34, (W - 16) / GLYPH_W, COLOR_LIGHT)
 	print(f, "UP/DOWN  SPACE BUY  ESC CLOSE", X + 8, Y + H - 12, COLOR_MID)
 }
 
@@ -271,4 +290,95 @@ print_wrapped :: proc(f: ^Frame, text: string, x, y, width: int, color: u8) {
 		}
 		line_y += 10
 	}
+}
+
+// Cracks in the packed layer under the bottom-left column as it is turned again and again, then the
+// hole the cat came out of.
+CRACKS := [CAT_TURNS][4][2]int {
+	{{7, 0}, {7, 1}, {8, 2}, {8, 3}},
+	{{8, 4}, {7, 5}, {6, 6}, {9, 4}},
+	{{10, 5}, {11, 6}, {5, 7}, {4, 8}},
+	{{12, 7}, {3, 9}, {12, 8}, {13, 9}},
+	{{2, 10}, {14, 10}, {6, 8}, {10, 8}},
+	{{1, 11}, {15, 11}, {7, 9}, {9, 9}},
+}
+
+draw_packed_corner :: proc(f: ^Frame, g: ^Game) {
+	x := cell_x(CAT_COL)
+	if g.cat_found {
+		fill_rect(f, x + 2, BIN_FLOOR + 1, CELL - 4, 10, COLOR_BLACK)
+		return
+	}
+	for i in 0 ..< g.corner_run {
+		for p in CRACKS[i] {
+			set_px(f, x + p[0], BIN_FLOOR + p[1], COLOR_BLACK)
+		}
+	}
+}
+
+CAT_SEAT_X :: BIN_X + BIN_W + 28
+CAT_SEAT_Y :: BIN_FLOOR - 16
+CAT_JUMP :: 1.0 // seconds for her jump out of the floor
+
+// Gold, for the statue: white to yellow, light to orange.
+GOLD :: Remap{0, 1, 2, 3, 3, 5, 6, 7, 8, 9, 10, 11, 4, 3, 14, 15}
+
+// The cat leaps out of the floor to sit by the barrow, waving; at the end she stands in gold on a plinth.
+draw_cat :: proc(f: ^Frame, g: ^Game) {
+	if g.finished {
+		fill_rect(f, CAT_SEAT_X - 1, CAT_SEAT_Y + 6, 18, 10, COLOR_LIGHT)
+		fill_rect(f, CAT_SEAT_X, CAT_SEAT_Y + 7, 16, 9, COLOR_MID)
+		draw_gfx(f, .Cat, CAT_SEAT_X, CAT_SEAT_Y - 10, remap = GOLD)
+		return
+	}
+	x, y := CAT_SEAT_X, CAT_SEAT_Y
+	if g.cat_t < CAT_JUMP {
+		t := g.cat_t / CAT_JUMP
+		x0, y0 := f32(cell_x(CAT_COL)), f32(BIN_FLOOR)
+		x = int(x0 + (f32(CAT_SEAT_X) - x0) * t)
+		y = int(y0 + (f32(CAT_SEAT_Y) - y0) * t - 90 * t * (1 - t) * 4 / 2)
+	}
+	wave := int(g.cat_t * 3) % 2 == 1
+	draw_gfx(f, .Cat_Wave if wave else .Cat, x, y)
+}
+
+// mm:ss
+clock :: proc(buf: []u8, seconds: f64) -> string {
+	s := int(seconds)
+	m := s / 60
+	s %= 60
+	n := 0
+	tmp: [16]u8
+	digits := commas(tmp[:], i64(m))
+	n += copy(buf[n:], digits)
+	buf[n] = ':'
+	n += 1
+	buf[n] = u8('0' + s / 10)
+	buf[n + 1] = u8('0' + s % 10)
+	return string(buf[:n + 2])
+}
+
+draw_end :: proc(f: ^Frame, g: ^Game) {
+	buf: [32]u8
+	X :: STREET_X - 8
+	Y :: 24
+	W :: SCREEN_W - X - 6
+	H :: 96
+	fill_rect(f, X - 1, Y - 1, W + 2, H + 2, COLOR_LIME)
+	fill_rect(f, X, Y, W, H, COLOR_BLACK)
+	print(f, "ASH STREET IS GREEN", X + 8, Y + 8, COLOR_LIME)
+	x := print(f, "TIME ", X + 8, Y + 24, COLOR_LIGHT) + X + 8
+	x += print(f, clock(buf[:], g.time), x, Y + 24, COLOR_YELLOW) + 12
+	x += print(f, "BEST ", x, Y + 24, COLOR_LIGHT)
+	print(f, clock(buf[:], g.best_time), x, Y + 24, COLOR_YELLOW)
+	x = print(f, "COMPOST ", X + 8, Y + 36, COLOR_LIGHT) + X + 8
+	x += print(f, commas(buf[:], g.compost), x, Y + 36, COLOR_YELLOW) + 12
+	x += print(f, "SPILLED ", x, Y + 36, COLOR_LIGHT)
+	print(f, commas(buf[:], g.spilled), x, Y + 36, COLOR_YELLOW)
+	if g.cat_found {
+		print_wrapped(f, "The lucky cat stands in gold by the bin.", X + 8, Y + 52, (W - 16) / GLYPH_W, COLOR_WHITE)
+	} else {
+		print_wrapped(f, "Something lucky is still down there.", X + 8, Y + 52, (W - 16) / GLYPH_W, COLOR_LIGHT)
+	}
+	print(f, "SPACE: A FRESH STREET", X + 8, Y + H - 14, COLOR_LIGHT)
 }
