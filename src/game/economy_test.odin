@@ -22,9 +22,9 @@ shop_opens_pauses_and_closes :: proc(t: ^testing.T) {
 buying_a_house_needs_soil :: proc(t: ^testing.T) {
 	g: Game
 	fresh(&g)
-	g.soil = 9
+	g.soil = HOUSE_PRICES[0] - 1
 	testing.expect(t, !buy(&g, SHOP_HOUSE))
-	g.soil = 15
+	g.soil = HOUSE_PRICES[0] + 5
 	testing.expect(t, buy(&g, SHOP_HOUSE))
 	testing.expect_value(t, g.houses, 1)
 	testing.expect_value(t, g.soil, 5)
@@ -57,7 +57,8 @@ upgrades_level_up_to_three :: proc(t: ^testing.T) {
 	testing.expect(t, !buy(&g, 1 + int(Upgrade.Fork)))
 	testing.expect_value(t, fork_max(&g), FORK_MAX + 3)
 	testing.expect_value(t, g.fork, FORK_MAX + 3)
-	testing.expect_value(t, g.soil, 10_000 - 15 - 40 - 90)
+	p := UPGRADE_PRICES[.Fork]
+	testing.expect_value(t, g.soil, 10_000 - p[0] - p[1] - p[2])
 }
 
 @(test)

@@ -4,10 +4,11 @@ package game
 // upgrades. Each bloomed house brings a neighbour: scraps fall a little faster and the green/brown mix
 // shifts with who moved in. Prices and boosts are Claude's placeholders (DESIGN.md).
 
-HOUSE_PRICES := [HOUSES]i64{10, 20, 35, 55, 80, 110, 150, 200}
+HOUSE_PRICES := [HOUSES]i64{12, 28, 48, 75, 110, 150, 200, 270}
 // How each house's neighbour shifts the chance of a green (they sum to 0 over the street).
 HOUSE_GREEN := [HOUSES]f32{0.08, -0.08, 0.05, -0.05, 0.10, -0.10, 0.0, 0.0}
 FALL_PER_HOUSE :: 0.15 // rows a second added per bloomed house
+DELIVER_PER_HOUSE :: 0.12 // seconds taken off the delivery per bloomed house
 
 Upgrade :: enum u8 {
 	Fork, // a pip more strength, and faster refill
@@ -18,10 +19,10 @@ Upgrade :: enum u8 {
 
 UPGRADE_MAX :: 3
 UPGRADE_PRICES := [Upgrade][UPGRADE_MAX]i64 {
-	.Fork  = {15, 40, 90},
-	.Worms = {20, 50, 110},
-	.Fan   = {15, 40, 90},
-	.Sieve = {25, 60, 120},
+	.Fork  = {20, 55, 120},
+	.Worms = {25, 70, 150},
+	.Fan   = {20, 55, 120},
+	.Sieve = {35, 80, 160},
 }
 UPGRADE_NAMES := [Upgrade]string {
 	.Fork  = "FORK",
@@ -55,6 +56,7 @@ worm_boost :: proc(g: ^Game) -> f32 {return 1 + 0.35 * f32(g.levels[.Worms])}
 air_time :: proc(g: ^Game) -> f32 {return AIR_TIME + 4 * f32(g.levels[.Fan])}
 soil_per_compost :: proc(g: ^Game) -> f32 {return (1 + 0.5 * f32(g.levels[.Sieve])) * (2 if g.cat_found else 1)}
 fall_speed :: proc(g: ^Game) -> f32 {return FALL_SPEED + FALL_PER_HOUSE * f32(g.houses)}
+deliver_time :: proc(g: ^Game) -> f32 {return DELIVER - DELIVER_PER_HOUSE * f32(g.houses)}
 
 green_chance :: proc(g: ^Game) -> f32 {
 	c := f32(GREEN_CHANCE)

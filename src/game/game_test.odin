@@ -122,7 +122,39 @@ slimy_green_does_not_heat :: proc(t: ^testing.T) {
 	put(&g, 1, .Brown)
 	g.heap[0][0].slime = true
 	tick(&g, 0.25)
-	testing.expect_value(t, g.heap[0][0].heat, f32(0))
+	// Only the slow breakdown on its own, not the brown's heat.
+	testing.expect(t, abs(g.heap[0][0].heat - 0.25 / SLIME_WEATHER) < 1e-5)
+}
+
+@(test)
+cold_brown_breaks_down_on_its_own :: proc(t: ^testing.T) {
+	g: Game
+	fresh(&g)
+	g.piece.col = 5
+	put(&g, 0, .Brown)
+	for _ in 0 ..< int(BROWN_WEATHER * 4) + 2 {
+		tick(&g, 0.25)
+		g.piece.y = SPAWN_Y
+	}
+	testing.expect_value(t, g.compost, 1)
+}
+
+@(test)
+next_scrap_waits_for_delivery :: proc(t: ^testing.T) {
+	g: Game
+	fresh(&g)
+	command(&g, .Ok)
+	testing.expect(t, g.waiting > 0)
+	command(&g, .Ok) // nothing to drop yet
+	testing.expect_value(t, height(&g, 0), 1)
+	command(&g, .East) // but it can be aimed
+	testing.expect_value(t, g.piece.col, 1)
+	for _ in 0 ..< 11 {
+		tick(&g, 0.25)
+	}
+	testing.expect_value(t, g.waiting, f32(0))
+	command(&g, .Ok)
+	testing.expect_value(t, height(&g, 1), 1)
 }
 
 @(test)

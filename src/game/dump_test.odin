@@ -12,7 +12,7 @@ DUMP_PLAY :: #config(DUMP_PLAY, "")
 DUMP_HOUSES :: #config(DUMP_HOUSES, 3)
 DUMP_SHOP :: #config(DUMP_SHOP, false)
 DUMP_END :: #config(DUMP_END, false)
-DUMP_CAT :: #config(DUMP_CAT, false) // the cat found, waving by the barrow
+DUMP_CAT :: #config(DUMP_CAT, false) // the cat found (by the barrow, or in gold at the end)
 DUMP_CRACKS :: #config(DUMP_CRACKS, 0)
 
 write_ppm :: proc(path: string, f: ^Frame) -> bool {
@@ -64,7 +64,7 @@ dump_play :: proc(t: ^testing.T) {
 	g.shop.open = DUMP_SHOP
 	g.shop.cursor = 2
 	g.corner_run = DUMP_CRACKS
-	if DUMP_CAT || DUMP_END {
+	if DUMP_CAT {
 		g.cat_found = true
 		g.cat_t = 5
 	}

@@ -7,7 +7,10 @@ package game
 // Tuning (Claude's placeholders; see DESIGN.md).
 COLS :: 6
 ROWS :: 9
-FALL_SPEED :: 1.6 // rows a second
+FALL_SPEED :: 2.6 // rows a second
+DELIVER :: 2.4 // seconds between scraps from the neighbours (less with each bloomed house)
+BROWN_WEATHER :: 60.0 // seconds for a brown touching no green to break down on its own
+SLIME_WEATHER :: 45.0 // seconds for a green touching no brown (slimy or not) to break down on its own
 HEAT_RATE :: 0.12 // heat a second for each brown a green touches (rots at 1)
 SLIME_TIME :: 4.0 // seconds a green can be packed among greens before it goes slimy
 SINK_TIME :: 0.35 // seconds between compost sinking a row
@@ -80,6 +83,9 @@ Game :: struct {
 	hatch:       [COLS]f32, // seconds the bottom compost has waited
 	sink_t:      f32,
 	piece:       Piece,
+	waiting:     f32, // seconds until the next scrap arrives (it is not in play until then)
+	since_spawn: f32,
+	spawns:      int, // scraps that have arrived
 	queue:       [QUEUE]Piece,
 	fork:        int, // strength pips
 	fork_t:      f32,
@@ -114,6 +120,7 @@ init_game :: proc(g: ^Game, seed: u64) {
 		g.queue[i] = new_scrap(g)
 	}
 	next_piece(g)
+	g.waiting = 0 // the first scrap is ready
 }
 
 // splitmix64
@@ -155,6 +162,11 @@ next_piece :: proc(g: ^Game) {
 	g.queue[QUEUE - 1] = new_scrap(g)
 	g.piece.col = col
 	g.piece.y = SPAWN_Y
+	g.waiting = max(deliver_time(g) - g.since_spawn, 0)
+	if g.waiting == 0 {
+		g.since_spawn = 0
+		g.spawns += 1
+	}
 }
 
 height :: proc(g: ^Game, col: int) -> int {
@@ -200,6 +212,9 @@ command :: proc(g: ^Game, c: Command) {
 		return
 	}
 	p := &g.piece
+	if g.waiting > 0 && (c == .South || c == .Ok) {
+		return // nothing to drop until the next scrap arrives
+	}
 	switch c {
 	case .West, .East:
 		to := p.col + (-1 if c == .West else 1)
@@ -292,9 +307,19 @@ tick :: proc(g: ^Game, dt_in: f64) {
 	}
 
 	// The falling scrap.
-	g.piece.y -= fall_speed(g) * dt
-	if g.piece.y <= f32(height(g, g.piece.col)) {
-		land(g)
+	g.since_spawn += dt
+	if g.waiting > 0 {
+		g.waiting -= dt
+		if g.waiting <= 0 {
+			g.waiting = 0
+			g.since_spawn = 0
+			g.spawns += 1
+		}
+	} else {
+		g.piece.y -= fall_speed(g) * dt
+		if g.piece.y <= f32(height(g, g.piece.col)) {
+			land(g)
+		}
 	}
 
 	rot(g, dt)
@@ -307,10 +332,23 @@ rot :: proc(g: ^Game, dt: f32) {
 	for col in 0 ..< COLS {
 		for row in 0 ..< ROWS {
 			c := &g.heap[col][row]
+			if c.kind == .Brown {
+				// A cold brown breaks down on its own, slowly, so a heap can never lock up for good.
+				_, gr := touching(g, col, row)
+				if gr == 0 {
+					c.heat += dt / BROWN_WEATHER
+				}
+				continue
+			}
 			if c.kind != .Green {
 				continue
 			}
 			browns, greens := touching(g, col, row)
+			if browns == 0 || c.slime {
+				// A slimy green, or one with no brown, breaks down on its own, slowly (so no heap locks
+				// up for good).
+				c.heat += dt / SLIME_WEATHER
+			}
 			if browns == 0 && greens >= 2 && !c.slime {
 				c.pack += dt
 				if c.pack >= SLIME_TIME {
@@ -333,7 +371,15 @@ rot :: proc(g: ^Game, dt: f32) {
 	// Rot the ripe ones after measuring, so one pass does not change its own neighbours mid-way.
 	for col in 0 ..< COLS {
 		for row in 0 ..< ROWS {
-			if g.heap[col][row].kind == .Green && g.heap[col][row].heat >= 1 {
+			c := &g.heap[col][row]
+			if c.heat < 1 {
+				continue
+			}
+			if c.kind == .Brown || c.kind == .Green && (c.slime || no_brown(g, col, row)) {
+				c^ = Cell{kind = .Compost, look = u8(rand_int(g, LOOKS))}
+				g.compost += 1
+				play(g, .Rot)
+			} else if c.kind == .Green {
 				rot_cell(g, col, row)
 			}
 		}
@@ -393,4 +439,9 @@ empty_hatch :: proc(g: ^Game, dt: f32) {
 		bank_soil(g)
 		play(g, .Hatch)
 	}
+}
+
+no_brown :: proc(g: ^Game, col, row: int) -> bool {
+	browns, _ := touching(g, col, row)
+	return browns == 0
 }

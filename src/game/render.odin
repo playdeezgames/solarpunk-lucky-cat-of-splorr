@@ -130,8 +130,17 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 		ly := cell_y(h)
 		fill_rect(f, cell_x(p.col) + 2, ly + CELL - 1, CELL - 4, 1, COLOR_LIGHT)
 	}
-	py := BIN_FLOOR - int(p.y * CELL) - CELL
-	draw_cell(f, cell_x(p.col), py, p.kind, p.look)
+	if g.waiting <= 0 {
+		py := BIN_FLOOR - int(p.y * CELL) - CELL
+		draw_cell(f, cell_x(p.col), py, p.kind, p.look)
+	} else {
+		// On its way: a dotted marker over the column it will arrive at.
+		for i in 0 ..< 3 {
+			if int(g.waiting * 6) % 3 != i {
+				fill_rect(f, cell_x(p.col) + 3 + i * 4, BIN_TOP - 10, 2, 2, COLOR_LIGHT)
+			}
+		}
+	}
 
 	// Next scraps.
 	fill_rect(f, BIN_X + BIN_W + 6, BIN_TOP - 3, 30, 66, COLOR_BLACK)
