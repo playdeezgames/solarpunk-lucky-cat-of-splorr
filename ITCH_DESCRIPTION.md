@@ -8,6 +8,8 @@ Steer the street's scraps into the compost bin. Rot greens against browns. Turn 
 
 ## Page text
 
+**Latest version:** https://playdeezgames.github.io/solarpunk-lucky-cat-of-splorr/ (GitHub Pages since November 16, 2026; also add it as an external link on the page)
+
 **Composters of SPLORR!!** is a falling-scrap puzzle about the bin at the end of Ash Street.
 
 The street is grey and so is the sky. The neighbours drop their scraps into the bin one at a time: **greens** (peels, lettuce, grass clippings) and **browns** (leaves, cardboard, twigs). Steer each scrap into a column. A green that touches browns heats up and rots, taking a brown with it, into **compost**. Pack greens together and they go slimy and stink. Leave browns on their own and they sit there, cold. Give a column a turn with the fork and it gets some air: its slime clears and it cooks faster, but the fork needs a rest between turns.

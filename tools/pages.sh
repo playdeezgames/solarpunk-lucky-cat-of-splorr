@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the shipping web build and copies it into docs/ for GitHub Pages (main, /docs).
-# Never commits or pushes. Pages is the user's call. Usage: tools/pages.sh
+# Never commits or pushes. Live since November 16, 2026. Usage: tools/pages.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 tools/test.sh

@@ -45,7 +45,7 @@ Odin compiled to `js_wasm32`, a 384 by 216 software framebuffer of Sweetie-16 pa
 ## Standing rules (full text in the vault's `Home.md`)
 
 - **"Push" means `git push`; "ship" means itch.io.** Neither unless the user says that word. The jam submission needs no Coxswain booking; publishing it still needs the user's yes.
-- GitHub Pages is the default; enabling it is the user's call.
+- **GitHub Pages is live** since November 16, 2026 (the user's "Push and Pages") at https://playdeezgames.github.io/solarpunk-lucky-cat-of-splorr/, served from `main` `/docs`. To update it: `tools/pages.sh`, commit `docs/`, push (each push needs the user's go-ahead).
 - itch.io embed: "Click to launch in fullscreen". Footer back links and the "Send feedback" link on the page.
 - Public repo: no 1-Bit Kingdom art. Keep every licence record and credit.
 - Anything an AI agent posts on itch.io says so.
