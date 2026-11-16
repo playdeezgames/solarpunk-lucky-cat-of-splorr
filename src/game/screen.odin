@@ -37,6 +37,32 @@ COLOR_LIGHT :: 13
 COLOR_MID :: 14
 COLOR_DARK :: 15
 
+// Order matches NAMES in tools/gen_gfx.py.
+Gfx :: enum {
+	Green_Peel,
+	Green_Lettuce,
+	Green_Grass,
+	Brown_Leaf,
+	Brown_Card,
+	Brown_Twig,
+	Compost_A,
+	Compost_B,
+	Compost_C,
+	Fork,
+	Barrow,
+	Cat,
+	Roof,
+	Wall,
+	Roof_Solar,
+	Roof_Farm,
+	Vines,
+	Turbine,
+	Barrel,
+	Garden_Bare,
+	Garden_Bloom,
+	Sun,
+}
+
 // A colour swap for one draw: identity unless changed.
 Remap :: [16]u8
 
@@ -66,6 +92,26 @@ fill_rect :: proc(f: ^Frame, x, y, w, h: int, c: u8) {
 	for yy in y ..< y + h {
 		for xx in x ..< x + w {
 			set_px(f, xx, yy, c)
+		}
+	}
+}
+
+// Draws a picture; colour 0 is transparent. `flip` mirrors it left to right; `scale` is whole pixels.
+draw_gfx :: proc(f: ^Frame, g: Gfx, x, y: int, flip := false, remap := IDENTITY, scale := 1) {
+	pic := &GFX[g]
+	for i in 0 ..< TILE * TILE {
+		c := pic[i]
+		if c == 0 {
+			continue
+		}
+		col := i % TILE
+		if flip {
+			col = TILE - 1 - col
+		}
+		if scale == 1 {
+			set_px(f, x + col, y + i / TILE, remap[c])
+		} else {
+			fill_rect(f, x + col * scale, y + (i / TILE) * scale, scale, scale, remap[c])
 		}
 	}
 }

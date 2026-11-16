@@ -18,6 +18,7 @@ FORK_MAX :: 3 // fork strength pips
 FORK_REFILL :: 4.0 // seconds to refill one pip
 GREEN_CHANCE :: 0.5 // chance a new scrap is green
 QUEUE :: 3 // scraps shown waiting
+HOUSES :: 8 // houses on the street
 SPAWN_Y :: f32(ROWS) + 0.5 // where a new scrap appears (rows from the bottom; the bin rim is ROWS)
 
 Kind :: enum u8 {
@@ -75,6 +76,7 @@ Game :: struct {
 	fork:        int, // strength pips
 	fork_t:      f32,
 	soil:        i64, // banked
+	houses:      int, // how many houses have bloomed (step 3 buys them)
 	compost:     i64, // total compost made (for the end screen)
 	spilled:     i64,
 	time:        f64, // seconds played
