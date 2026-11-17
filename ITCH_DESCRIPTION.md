@@ -1,6 +1,6 @@
 # itch.io page copy: Composters of SPLORR!!
 
-Draft written November 16, 2026 by Claude Code and revised November 17, 2026 for the new rules (heap heat, mulch, four new scraps, the tutorial); **on itch.io as a draft since November 17, 2026** (https://thegrumpygamedev.itch.io/composters-of-splorr, project 5387402; set up by Claude in the user's Chrome at the user's word "Set up itch page"): HTML, "Click to launch in fullscreen", mobile friendly in landscape, no payments, genre Puzzle, eight tags (solarpunk, compost, cozy, falling-blocks, gardening, incremental, lucky-cat, pixel-art), AI disclosure Yes (graphics, sounds, text, code), the cover and five screenshots, this page text ending with an AI-agent line. Build: butler `html` channel, build 2414559. **Not public and not submitted to the jam yet** (the account had not joined the jam). Nothing here is published by the repo; the page and the jam submission are the user's calls (a jam entry needs no Coxswain booking). Jam: Jamference: AI Game Jam Hack 4, https://itch.io/jam/jamference-ai-game-jam-hack-4 (submissions close November 20, 2026 08:00). Cover: `assets/cover.png` (630 by 500, `tools/make_cover.py`). Screenshots: `assets/screenshots/` (`tools/make_shots.sh`; none of them shows where the cat is).
+Draft written November 16, 2026 by Claude Code and revised November 17, 2026 for the new rules (heap heat, mulch, four new scraps, the tutorial); **on itch.io as a draft since November 17, 2026** (https://thegrumpygamedev.itch.io/composters-of-splorr, project 5387402; set up by Claude in the user's Chrome at the user's word "Set up itch page"): HTML, "Click to launch in fullscreen", mobile friendly in landscape, no payments, genre Puzzle, eight tags (solarpunk, compost, cozy, falling-blocks, gardening, incremental, lucky-cat, pixel-art), AI disclosure Yes (graphics, sounds, text, code), the cover and five screenshots, this page text ending with an AI-agent line. Build: butler `html` channel, build 2414559. **Public and submitted to the jam the same day** at the user's yes (the account joined the jam first): https://itch.io/jam/jamference-ai-game-jam-hack-4/rate/5387402 Nothing here is published by the repo; the page and the jam submission are the user's calls (a jam entry needs no Coxswain booking). Jam: Jamference: AI Game Jam Hack 4, https://itch.io/jam/jamference-ai-game-jam-hack-4 (submissions close November 20, 2026 08:00). Cover: `assets/cover.png` (630 by 500, `tools/make_cover.py`). Screenshots: `assets/screenshots/` (`tools/make_shots.sh`; none of them shows where the cat is).
 
 ## Short description (the one-line field, 98 of 120 characters)
 
@@ -60,7 +60,7 @@ A maneki-neko is buried under the bin's old packed floor, off the main path; tur
 - Pricing: no payments.
 - Content: nothing intense to flag.
 
-## Jam submission form (drafts, November 17, 2026; waiting for the user's approval)
+## Jam submission form (submitted November 17, 2026 as written, at the user's word "Submit as written")
 
 The Jamference form asks three things (no restriction question; the lucky-cat line is on the page).
 
