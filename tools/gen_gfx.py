@@ -15,7 +15,8 @@ world = json.load(open(os.path.join(ROOT, 'art/composters.json')))
 # Order is the Gfx enum order in src/game/screen.odin; names are images in the "compost" tileset.
 NAMES = ['green_peel', 'green_lettuce', 'green_grass', 'brown_leaf', 'brown_card', 'brown_twig',
          'compost_a', 'compost_b', 'compost_c', 'fork', 'barrow', 'cat', 'roof', 'wall', 'roof_solar',
-         'roof_farm', 'vines', 'turbine', 'barrel', 'garden_bare', 'garden_bloom', 'sun', 'cat_wave']
+         'roof_farm', 'vines', 'turbine', 'barrel', 'garden_bare', 'garden_bloom', 'sun', 'cat_wave',
+         'green_grounds', 'green_citrus', 'brown_egg_box', 'junk_packet']
 
 ts = next(t['tileset'] for t in world['tilesets'] if t['name'] == 'compost')
 W, H = ts['width'], ts['height']

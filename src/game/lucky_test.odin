@@ -114,7 +114,8 @@ save_round_trips_and_rejects_damage :: proc(t: ^testing.T) {
 	g.soil = 77
 	g.levels[.Worms] = 2
 	g.corner_run = 3
-	g.chat.lands = LEARN_LANDS
+	g.warmth = 0.5
+	g.tut.card = .Slime
 	say(&g, NEIGHBOURS[0], BLOOM_LINES[0])
 	buf := make([]u8, SAVE_CAP)
 	defer delete(buf)
@@ -128,6 +129,8 @@ save_round_trips_and_rejects_damage :: proc(t: ^testing.T) {
 	testing.expect_value(t, h.corner_run, 3)
 	testing.expect_value(t, h.heap[2][1].kind, Kind.Green)
 	testing.expect_value(t, h.chat.line, "")
+	testing.expect_value(t, h.warmth, f32(0.5))
+	testing.expect_value(t, h.tut.card, Tip.Slime)
 
 	// A gap in a stack.
 	bad: Game = g

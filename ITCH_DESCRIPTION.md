@@ -1,6 +1,6 @@
 # itch.io page copy: Composters of SPLORR!!
 
-Draft written November 16, 2026 by Claude Code; **not approved, not posted**. Nothing here is published by the repo; the page and the jam submission are the user's calls (a jam entry needs no Coxswain booking). Jam: Jamference: AI Game Jam Hack 4, https://itch.io/jam/jamference-ai-game-jam-hack-4 (submissions close November 20, 2026 08:00). Cover: `assets/cover.png` (630 by 500, `tools/make_cover.py`). Screenshots: `assets/screenshots/` (`tools/make_shots.sh`; none of them shows where the cat is).
+Draft written November 16, 2026 by Claude Code and revised November 17, 2026 for the new rules (heap heat, mulch, four new scraps, the tutorial); **not approved, not posted**. Nothing here is published by the repo; the page and the jam submission are the user's calls (a jam entry needs no Coxswain booking). Jam: Jamference: AI Game Jam Hack 4, https://itch.io/jam/jamference-ai-game-jam-hack-4 (submissions close November 20, 2026 08:00). Cover: `assets/cover.png` (630 by 500, `tools/make_cover.py`). Screenshots: `assets/screenshots/` (`tools/make_shots.sh`; none of them shows where the cat is).
 
 ## Short description (the one-line field, 98 of 120 characters)
 
@@ -12,9 +12,9 @@ Steer the street's scraps into the compost bin. Rot greens against browns. Turn 
 
 **Composters of SPLORR!!** is a falling-scrap puzzle about the bin at the end of Ash Street.
 
-The street is grey and so is the sky. The neighbours drop their scraps into the bin one at a time: **greens** (peels, lettuce, grass clippings) and **browns** (leaves, cardboard, twigs). Steer each scrap into a column. A green that touches browns heats up and rots, taking a brown with it, into **compost**. Pack greens together and they go slimy and stink. Leave browns on their own and they sit there, cold. Give a column a turn with the fork and it gets some air: its slime clears and it cooks faster, but the fork needs a rest between turns.
+The street is grey and so is the sky. The neighbours drop their scraps into the bin one at a time: **greens** (peels, lettuce, grass clippings) and **browns** (leaves, cardboard, twigs). Steer each scrap into a column. A green that touches browns heats up and rots, taking a brown with it, into **compost**. Pack greens together and they go slimy and stink. Leave a scrap on its own and it slowly breaks down into grey **mulch**, worth nothing. Give a column a turn with the fork and it gets some air: its slime clears and it cooks faster, but the fork needs a rest between turns.
 
-Compost is heavy. It sinks to the bottom and drops out of the hatch into the barrow as soil. Spend the soil in the bin shed: green the next house on the street (a garden, a solar roof, vines, a rain barrel, a wind turbine, a rooftop farm, and a neighbour who sends more scraps), or buy a better fork, worms, a solar fan or a sieve. As the street greens, the smog lifts. Green all eight houses and Ash Street is done. A street takes about 20 to 30 minutes, and your best time is kept.
+Every rot warms the heap, and a hot heap makes up to three times the soil, so keep it cooking. Compost is heavy. It sinks to the bottom and drops out of the hatch into the barrow as soil. New neighbours bring new scraps: coffee grounds that rot fast, egg boxes that feed two greens, orange peel that keeps greens from going slimy, and crisp packets that have to be forked out. Spend the soil in the bin shed: green the next house on the street (a garden, a solar roof, vines, a rain barrel, a wind turbine, a rooftop farm, and a neighbour who sends more scraps), or buy a better fork, worms, a solar fan or a sieve. As the street greens, the smog lifts. Green all eight houses and Ash Street is done. A street takes about 20 to 30 minutes, and your best time is kept.
 
 **This Metaphor has a hidden lucky cat.** Find her and your compost will thank you. Old Mo, over the fence, remembers her.
 
@@ -25,6 +25,7 @@ Compost is heavy. It sinks to the bottom and drops out of the hatch into the bar
 
 ### How to play
 
+- The first street walks you through it, one step at a time; "How to play" in the bin shed shows it all again.
 - **Keyboard:** Left and Right (or A and D) steer the falling scrap, Down drops it a row, Space (or Enter) drops it straight down, Up turns the column under it. Esc, E or Backspace opens the bin shed: Up and Down choose, Space buys, Esc closes. F sends feedback.
 - **Gamepad:** d-pad or left stick, A for OK, B for the shed.
 - **Touch:** the pads beside the screen.
@@ -33,7 +34,7 @@ The street is saved in your browser as you play. "Start a fresh street" in the s
 
 ### How it was made (AI disclosure)
 
-Made for the jam by TheGrumpyGameDev with Claude Code, an AI agent. TheGrumpyGameDev chose the idea from four pitches and made the key design decisions (the run length, the heap, how greens and browns work, the goal of greening the street, where the cat hides and what she gives, the title). Claude Code (Claude Opus) wrote all the code and tests, drew every picture pixel by pixel in the Anvil (a small sprite-and-sound tool it drives over MCP), made the sound effects as synthesised blips, wrote the neighbours' chatter, wrote a playtest bot that plays whole streets to tune the prices, and drafted this text. Generative AI was used for code, art, sound and text.
+Made for the jam by TheGrumpyGameDev with Claude Code, an AI agent. TheGrumpyGameDev chose the idea from four pitches and made the key design decisions (the run length, the heap, how greens and browns work, the goal of greening the street, where the cat hides and what she gives, the title). Claude Code (Claude Opus) wrote all the code and tests, drew every picture pixel by pixel in the Anvil (a small sprite-and-sound tool it drives over MCP), made the sound effects as synthesised blips, wrote the neighbours' chatter, wrote a playtest bot that plays whole streets in five styles (careful, relaxed, lazy, never turning, random) to tune the rules and prices so that good play is rewarded, and drafted this text. Generative AI was used for code, art, sound and text.
 
 ### Team
 

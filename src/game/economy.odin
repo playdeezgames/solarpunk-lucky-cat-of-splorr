@@ -4,11 +4,11 @@ package game
 // upgrades. Each bloomed house brings a neighbour: scraps fall a little faster and the green/brown mix
 // shifts with who moved in. Prices and boosts are Claude's placeholders (DESIGN.md).
 
-HOUSE_PRICES := [HOUSES]i64{12, 28, 48, 75, 110, 150, 200, 270}
+HOUSE_PRICES := [HOUSES]i64{15, 45, 90, 140, 210, 280, 365, 480}
 // How each house's neighbour shifts the chance of a green (they sum to 0 over the street).
 HOUSE_GREEN := [HOUSES]f32{0.08, -0.08, 0.05, -0.05, 0.10, -0.10, 0.0, 0.0}
 FALL_PER_HOUSE :: 0.15 // rows a second added per bloomed house
-DELIVER_PER_HOUSE :: 0.12 // seconds taken off the delivery per bloomed house
+DELIVER_PER_HOUSE :: 0.08 // seconds taken off the delivery per bloomed house
 
 Upgrade :: enum u8 {
 	Fork, // a pip more strength, and faster refill
@@ -19,10 +19,10 @@ Upgrade :: enum u8 {
 
 UPGRADE_MAX :: 3
 UPGRADE_PRICES := [Upgrade][UPGRADE_MAX]i64 {
-	.Fork  = {20, 55, 120},
-	.Worms = {25, 70, 150},
-	.Fan   = {20, 55, 120},
-	.Sieve = {35, 80, 160},
+	.Fork  = {25, 70, 160},
+	.Worms = {30, 90, 200},
+	.Fan   = {30, 90, 200},
+	.Sieve = {45, 110, 230},
 }
 UPGRADE_NAMES := [Upgrade]string {
 	.Fork  = "FORK",
@@ -33,14 +33,15 @@ UPGRADE_NAMES := [Upgrade]string {
 UPGRADE_TEXT := [Upgrade]string {
 	.Fork  = "A sturdier fork: more turns, quicker rest.",
 	.Worms = "Red wigglers. Greens rot faster.",
-	.Fan   = "Turned columns stay aired longer.",
+	.Fan   = "Turned columns stay aired longer, and the heap holds its heat.",
 	.Sieve = "Sift more soil from each compost.",
 }
 
 // Shop rows: the next house first, then the upgrades, sound, start over, Back.
 SHOP_HOUSE :: 0
 SHOP_SOUND :: 1 + len(Upgrade)
-SHOP_RESTART :: SHOP_SOUND + 1
+SHOP_HELP :: SHOP_SOUND + 1
+SHOP_RESTART :: SHOP_HELP + 1
 SHOP_BACK :: SHOP_RESTART + 1
 SHOP_ROWS :: SHOP_BACK + 1
 
@@ -54,9 +55,11 @@ fork_max :: proc(g: ^Game) -> int {return FORK_MAX + g.levels[.Fork]}
 fork_refill :: proc(g: ^Game) -> f32 {return FORK_REFILL - 0.8 * f32(g.levels[.Fork])}
 worm_boost :: proc(g: ^Game) -> f32 {return 1 + 0.35 * f32(g.levels[.Worms])}
 air_time :: proc(g: ^Game) -> f32 {return AIR_TIME + 4 * f32(g.levels[.Fan])}
+warm_cool :: proc(g: ^Game) -> f32 {return WARM_COOL * (1 - 0.2 * f32(g.levels[.Fan]))}
 soil_per_compost :: proc(g: ^Game) -> f32 {return (1 + 0.5 * f32(g.levels[.Sieve])) * (2 if g.cat_found else 1)}
-fall_speed :: proc(g: ^Game) -> f32 {return FALL_SPEED + FALL_PER_HOUSE * f32(g.houses)}
-deliver_time :: proc(g: ^Game) -> f32 {return DELIVER - DELIVER_PER_HOUSE * f32(g.houses)}
+// While the first lessons run, scraps fall and come slower.
+fall_speed :: proc(g: ^Game) -> f32 {return (FALL_SPEED + FALL_PER_HOUSE * f32(g.houses)) * (0.5 if tut_slow(g) else 1)}
+deliver_time :: proc(g: ^Game) -> f32 {return (DELIVER - DELIVER_PER_HOUSE * f32(g.houses)) * (2 if tut_slow(g) else 1)}
 
 green_chance :: proc(g: ^Game) -> f32 {
 	c := f32(GREEN_CHANCE)
@@ -66,9 +69,10 @@ green_chance :: proc(g: ^Game) -> f32 {
 	return clamp(c, 0.25, 0.75)
 }
 
-// One compost out of the hatch.
-bank_soil :: proc(g: ^Game) {
-	g.soil_frac += soil_per_compost(g)
+// One compost out of the hatch, worth what it was worth when it rotted (mulch is worth nothing).
+bank_soil :: proc(g: ^Game, worth: f32) {
+	stats.soil += f64(worth)
+	g.soil_frac += worth
 	whole := i64(g.soil_frac)
 	g.soil += whole
 	g.soil_frac -= f32(whole)
@@ -127,6 +131,10 @@ buy :: proc(g: ^Game, row: int) -> bool {
 		g.muted = !g.muted
 		play(g, .Buy)
 		return false
+	case SHOP_HELP:
+		close_shop(g)
+		g.tut.card = .Help
+		return false
 	case SHOP_RESTART:
 		if !g.shop.confirm {
 			g.shop.confirm = true
@@ -146,6 +154,7 @@ buy :: proc(g: ^Game, row: int) -> bool {
 		g.houses += 1
 		play(g, .Bloom)
 		chat_bloom(g, g.houses - 1)
+		tut_bought(g)
 		if g.houses == HOUSES {
 			finish_street(g)
 		}

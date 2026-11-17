@@ -66,9 +66,9 @@ sieve_carries_part_soil :: proc(t: ^testing.T) {
 	g: Game
 	fresh(&g)
 	g.levels[.Sieve] = 1 // 1.5 soil a compost
-	bank_soil(&g)
+	bank_soil(&g, soil_per_compost(&g))
 	testing.expect_value(t, g.soil, 1)
-	bank_soil(&g)
+	bank_soil(&g, soil_per_compost(&g))
 	testing.expect_value(t, g.soil, 3)
 }
 
@@ -89,15 +89,18 @@ worms_and_fan_boost :: proc(t: ^testing.T) {
 }
 
 @(test)
-chatter_waits_for_the_controls :: proc(t: ^testing.T) {
+chatter_waits_for_the_tutorial :: proc(t: ^testing.T) {
 	g: Game
-	fresh(&g)
+	init_game(&g, 1, guided = true)
+	command(&g, .Ok) // the welcome card
 	for _ in 0 ..< 40 {
 		tick(&g, 0.25)
 		g.piece.y = SPAWN_Y
 	}
 	testing.expect_value(t, g.chat.line, "")
-	g.chat.lands = LEARN_LANDS
+	tut_skip(&g)
+	g.tut.seen = ~bit_set[Tip;u16]{}
+	g.chat.next = 0
 	tick(&g, 0.25)
 	testing.expect(t, g.chat.line != "")
 }

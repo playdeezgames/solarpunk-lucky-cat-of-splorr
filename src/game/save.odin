@@ -6,7 +6,7 @@ package game
 // are blanked in the save. Bump SAVE_VERSION whenever Game's layout changes (old saves are then ignored).
 
 SAVE_MAGIC :: u32(0x504D_4F43) // "COMP"
-SAVE_VERSION :: u32(1)
+SAVE_VERSION :: u32(2) // 2: heap heat, mulch, special scraps, the tutorial (November 17, 2026)
 
 Save_Header :: struct {
 	magic:   u32,
@@ -63,7 +63,7 @@ save_is_sane :: proc(g: ^Game) -> bool {
 		ended := false
 		for row in 0 ..< ROWS {
 			c := g.heap[col][row]
-			if u8(c.kind) > u8(max(Kind)) || int(c.look) >= LOOKS {
+			if u8(c.kind) > u8(max(Kind)) || u8(c.sort) > u8(max(Sort)) || int(c.look) >= LOOKS || c.fed > 1 || !finite(c.worth, 0, 100) {
 				return false
 			}
 			if c.kind == .None {
@@ -81,7 +81,7 @@ save_is_sane :: proc(g: ^Game) -> bool {
 	}
 	pieces := [QUEUE + 1]Piece{g.piece, g.queue[0], g.queue[1], g.queue[2]}
 	for p in pieces {
-		if p.kind != .Green && p.kind != .Brown || int(p.look) >= LOOKS {
+		if p.kind != .Green && p.kind != .Brown && p.kind != .Junk || u8(p.sort) > u8(max(Sort)) || int(p.look) >= LOOKS {
 			return false
 		}
 	}
@@ -94,6 +94,13 @@ save_is_sane :: proc(g: ^Game) -> bool {
 		}
 	}
 	if g.houses < 0 || g.houses > HOUSES || g.fork < 0 || g.fork > fork_max(g) || !finite(g.fork_t, 0, 10) {
+		return false
+	}
+	if !finite(g.warmth, 0, 1) || g.mulched < 0 || g.packets < 0 {
+		return false
+	}
+	t := g.tut
+	if u8(t.step) > u8(max(Step)) || u8(t.card) > u8(max(Tip)) || t.script < 0 || t.script > len(SCRIPT) || t.count < 0 {
 		return false
 	}
 	if g.soil < 0 || g.compost < 0 || g.spilled < 0 || !finite(g.soil_frac, 0, 1) || !finite(g.sink_t, 0, 1) {

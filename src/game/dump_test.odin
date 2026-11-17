@@ -14,6 +14,8 @@ DUMP_SHOP :: #config(DUMP_SHOP, false)
 DUMP_END :: #config(DUMP_END, false)
 DUMP_CAT :: #config(DUMP_CAT, false) // the cat found (by the barrow, or in gold at the end)
 DUMP_CRACKS :: #config(DUMP_CRACKS, 0)
+DUMP_CARD :: #config(DUMP_CARD, 0) // a tutorial card (Tip) over the street
+DUMP_STEP :: #config(DUMP_STEP, 99) // a guided tutorial step (Step) along the bottom (99 for none)
 
 write_ppm :: proc(path: string, f: ^Frame) -> bool {
 	data := make([]u8, 15 + SCREEN_W * SCREEN_H * 3)
@@ -43,13 +45,19 @@ dump_play :: proc(t: ^testing.T) {
 	put(&g, 1, .Compost, .Brown, .Green, .Green, .Green, .Green)
 	put(&g, 2, .Green, .Brown, .Compost, .Brown)
 	put(&g, 3, .Brown, .Green, .Brown, .Green, .Brown, .Green, .Brown)
-	put(&g, 4, .Brown, .Brown, .Brown)
+	put(&g, 4, .Brown, .Junk, .Brown)
 	put(&g, 5, .Green, .Brown)
 	for c in 0 ..< COLS {
 		for r in 0 ..< ROWS {
 			g.heap[c][r].look = u8((c * 7 + r * 3) % LOOKS)
 		}
 	}
+	g.heap[2][2].mulch = true
+	g.heap[2][3].sort = .Egg_Box
+	g.heap[2][3].fed = 1
+	g.heap[3][5].sort = .Grounds
+	g.heap[0][3].sort = .Citrus
+	g.warmth = 0.55
 	g.heap[1][4].slime = true
 	g.heap[1][3].slime = true
 	g.heap[3][1].heat = 0.8
@@ -58,7 +66,11 @@ dump_play :: proc(t: ^testing.T) {
 	g.air[4] = AIR_TIME - 0.1
 	g.fork = 2
 	g.piece = Piece{kind = .Green, look = 1, col = 4, y = 6.3}
-	g.chat.lands = LEARN_LANDS
+	g.tut.card = Tip(DUMP_CARD)
+	if DUMP_STEP < 99 {
+		g.tut.done = false
+		g.tut.step = Step(u8(DUMP_STEP))
+	}
 	say(&g, NEIGHBOURS[2], BLOOM_LINES[2])
 	g.levels[.Worms] = 1
 	g.shop.open = DUMP_SHOP

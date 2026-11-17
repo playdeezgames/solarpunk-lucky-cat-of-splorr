@@ -41,8 +41,8 @@ finish_street :: proc(g: ^Game) {
 
 // A fresh grey street; the bests and the sound setting stay.
 new_street :: proc(g: ^Game) {
-	best, cat, streets, muted := g.best_time, g.best_cat, g.streets, g.muted
+	best, cat, streets, muted, seen := g.best_time, g.best_cat, g.streets, g.muted, g.tut.seen
 	init_game(g, rand_u64(g))
 	g.best_time, g.best_cat, g.streets, g.muted = best, cat, streets, muted
-	g.chat.lands = LEARN_LANDS // they know the controls by now
+	g.tut.seen = seen // they know the bin by now; cards already read stay read
 }

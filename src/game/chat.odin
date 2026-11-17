@@ -6,18 +6,17 @@ package game
 
 CHAT_EVERY :: 9.0
 CHAT_HOLD :: 7.0 // seconds a line stays up
-LEARN_LANDS :: 12 // scraps landed before the controls give way to chatter
 
 NEIGHBOURS := [HOUSES]string{"PRIYA, NO.1", "DES, NO.2", "MRS OKAFOR, NO.3", "THEO, NO.4", "THE BAKERS, NO.5", "JUNE, NO.6", "SAM & SAM, NO.7", "OLD MO, NO.8"}
 
 // What each neighbour says when their house blooms.
 BLOOM_LINES := [HOUSES]string {
-	"Panels are up. The kettle runs on sun now.",
-	"Ivy on the bricks. It's cooler inside already.",
+	"Panels are up. You can have my coffee grounds!",
+	"Ivy on the bricks. I'll send you my egg boxes.",
 	"A barrel for the rain. Never buying water again.",
-	"The turbine hums. I find it very calming.",
+	"The turbine hums. Here's peel from my juicer.",
 	"Tomatoes on the roof! Bread and tomatoes!",
-	"Panels. Mine are tidier than Priya's.",
+	"Panels! Sorry about the kids' crisp packets.",
 	"We grew vines. Well, the vines grew.",
 	"About time. I've been waiting forty years.",
 }
@@ -57,7 +56,7 @@ Chat :: struct {
 	line:  string,
 	t:     f32, // seconds the line has left on screen
 	next:  f32, // seconds until the next line
-	lands: int, // scraps landed (to retire the controls hint)
+	lands: int, // scraps landed
 }
 
 say :: proc(g: ^Game, who, line: string) {
@@ -73,7 +72,7 @@ chat_bloom :: proc(g: ^Game, house: int) {
 
 chat_tick :: proc(g: ^Game, dt: f32) {
 	g.chat.t = max(g.chat.t - dt, 0)
-	if g.shop.open || g.chat.lands < LEARN_LANDS {
+	if g.shop.open || !g.tut.done || g.tut.card != .None {
 		return
 	}
 	g.chat.next -= dt

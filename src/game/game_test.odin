@@ -6,6 +6,7 @@ import "core:testing"
 // A game with an empty heap and a known falling scrap.
 fresh :: proc(g: ^Game, kind := Kind.Green) {
 	init_game(g, 1)
+	g.tut.seen = ~bit_set[Tip;u16]{} // no tutorial cards pausing the heap
 	g.piece = Piece{kind = kind, col = 0, y = SPAWN_Y}
 }
 
@@ -136,7 +137,8 @@ cold_brown_breaks_down_on_its_own :: proc(t: ^testing.T) {
 		tick(&g, 0.25)
 		g.piece.y = SPAWN_Y
 	}
-	testing.expect_value(t, g.compost, 1)
+	testing.expect_value(t, g.mulched, 1)
+	testing.expect(t, g.heap[0][0].mulch)
 }
 
 @(test)
@@ -193,6 +195,7 @@ compost_sinks_and_drops_out_as_soil :: proc(t: ^testing.T) {
 	fresh(&g)
 	g.piece.col = 5
 	put(&g, 0, .Brown, .Brown, .Compost)
+	g.heap[0][2].worth = 1
 	for _ in 0 ..< 3 * 60 {
 		tick(&g, 1.0 / 60)
 		g.piece.y = SPAWN_Y

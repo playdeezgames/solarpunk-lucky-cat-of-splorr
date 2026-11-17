@@ -18,7 +18,7 @@ state: struct {
 }
 
 main :: proc() {
-	game.init_game(&state.rules, u64(time.now()._nsec))
+	game.init_game(&state.rules, u64(time.now()._nsec), guided = true)
 }
 
 @(export)

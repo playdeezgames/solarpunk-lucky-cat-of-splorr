@@ -18,12 +18,16 @@ Style :: struct {
 	drop:  bool, // drops straight down once over the column (else lets it fall)
 	smart: bool, // places by the neighbours; otherwise picks the lowest column, with a little sense
 	cat:   bool, // goes looking for the cat once it has heard the hint
+	random: bool, // drops in a random open column, no thought at all
+	no_turn: bool, // never turns the heap
 }
 
 STYLES := [?]Style {
 	{name = "careful", think = 0.5, step = 0.12, drop = true, smart = true, cat = true},
 	{name = "relaxed", think = 1.0, step = 0.2, drop = true, smart = true, cat = false},
 	{name = "lazy", think = 0.8, step = 0.25, drop = false, smart = false, cat = false},
+	{name = "noturn", think = 1.0, step = 0.2, drop = true, smart = true, no_turn = true},
+	{name = "random", think = 0.3, step = 0.12, drop = true, random = true, no_turn = true},
 }
 
 // How good it is to land `kind` on column `col` now.
@@ -32,7 +36,10 @@ place_score :: proc(g: ^Game, kind: Kind, col: int, smart: bool) -> f32 {
 	if h >= ROWS {
 		return -1000
 	}
-	browns, greens := touching(g, col, h)
+	if kind == .Junk {
+		return -f32(h) // somewhere low, to fork out soon
+	}
+	browns, greens, _ := touching(g, col, h)
 	score := -f32(h) * 0.6
 	if !smart {
 		return score + (1 if kind == .Green && browns > 0 else 0)
@@ -44,7 +51,7 @@ place_score :: proc(g: ^Game, kind: Kind, col: int, smart: bool) -> f32 {
 		OFFS :: [4][2]int{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
 		for o in OFFS {
 			if at(g, col + o[0], h + o[1]) == .Green {
-				b, _ := touching(g, col + o[0], h + o[1])
+				b, _, _ := touching(g, col + o[0], h + o[1])
 				score += 3 if b == 0 else 1
 			}
 		}
@@ -67,7 +74,7 @@ best_column :: proc(g: ^Game, kind: Kind, smart: bool) -> int {
 slimy_column :: proc(g: ^Game) -> int {
 	for col in 0 ..< COLS {
 		for row in 0 ..< height(g, col) {
-			if g.heap[col][row].slime {
+			if g.heap[col][row].slime || g.heap[col][row].kind == .Junk {
 				return col
 			}
 		}
@@ -95,15 +102,22 @@ Run :: struct {
 	houses:   [HOUSES]f64, // when each house bloomed
 	spilled:  i64,
 	compost:  i64,
+	mulched:  i64,
 	cat_at:   f64,
 	finished: bool,
+	stats:    Stats,
+	fill:     f64, // average share of the bin full
+	idle:     f64, // share of the time with no scrap to steer
+	max_h:    int,
 }
 
 play_street :: proc(seed: u64, style: Style) -> Run {
 	g := new(Game)
 	defer free(g)
 	init_game(g, seed)
+	stats = {}
 	run: Run
+	samples: f64
 	DT :: f32(1.0 / 30)
 	wait := style.think
 	target := -1
@@ -113,6 +127,20 @@ play_street :: proc(seed: u64, style: Style) -> Run {
 	for g.time < 3 * 3600 && !g.finished {
 		tick(g, f64(DT))
 		g.sound_count = 0
+		if g.tut.card != .None {
+			command(g, .Ok) // reads the card
+			continue
+		}
+		filled := 0
+		for col in 0 ..< COLS {
+			filled += height(g, col)
+			run.max_h = max(run.max_h, height(g, col))
+		}
+		run.fill += f64(filled) / (COLS * ROWS)
+		if g.waiting > 0 {
+			run.idle += 1
+		}
+		samples += 1
 		if g.chat.who == OLD_MO {
 			heard = true
 		}
@@ -137,7 +165,7 @@ play_street :: proc(seed: u64, style: Style) -> Run {
 				run.cat_at = g.time
 				digging = false
 			}
-		} else if col := slimy_column(g); col >= 0 && g.fork > 0 && style.smart {
+		} else if col := slimy_column(g); col >= 0 && g.fork > 0 && style.smart && !style.no_turn {
 			turn(g, col)
 		}
 		if g.waiting > 0 {
@@ -155,6 +183,9 @@ play_street :: proc(seed: u64, style: Style) -> Run {
 		}
 		if target < 0 {
 			target = best_column(g, g.piece.kind, style.smart)
+			if style.random {
+				target = rand_int(g, COLS)
+			}
 		}
 		if g.piece.col != target {
 			before_col := g.piece.col
@@ -173,7 +204,11 @@ play_street :: proc(seed: u64, style: Style) -> Run {
 	run.time = g.time
 	run.spilled = g.spilled
 	run.compost = g.compost
+	run.mulched = g.mulched
 	run.finished = g.finished
+	run.stats = stats
+	run.fill /= samples
+	run.idle /= samples
 	return run
 }
 
@@ -192,6 +227,8 @@ playtest_streets :: proc(t: ^testing.T) {
 				fmt.printf(" %4.1f", h / 60)
 			}
 			fmt.println()
+			st := r.stats
+			fmt.printf("         soil %.0f, heat avg x%.2f, mulch %d, packets out %d; pairs %d, green alone %d, brown alone %d, slimed %d, turns %d (on slime %d); fill %.0f%%, max height %d, idle %.0f%%\n", st.soil, 1 + 2 * st.warmth / (r.time * 30), r.mulched, st.packets, st.pairs, st.green_alone, st.brown_alone, st.slimed, st.turns, st.turns_slime, r.fill * 100, r.max_h, r.idle * 100)
 		}
 		fmt.printf("%-8s average %.1f min\n", style.name, total / f64(PLAYTEST_SEEDS) / 60)
 	}
