@@ -59,3 +59,19 @@ A maneki-neko is buried under the bin's old packed floor, off the main path; tur
 - AI generation disclosure: Yes, with Code, Graphics, Sound and Text ticked.
 - Pricing: no payments.
 - Content: nothing intense to flag.
+
+## Jam submission form (drafts, November 17, 2026; waiting for the user's approval)
+
+The Jamference form asks three things (no restriction question; the lucky-cat line is on the page).
+
+**How did you use AI?** (required)
+
+> Claude Code (Claude Opus), an AI coding agent, built the game with TheGrumpyGameDev as designer and playtester. TheGrumpyGameDev picked the idea from four pitches Claude wrote and made every key design call (run length, the heap, how greens and browns mix, greening the street, where the cat hides and what she gives, the title). Claude wrote all the code (Odin compiled to WebAssembly, drawing a 384x216 software-rendered screen) and the tests, drew every picture pixel by pixel in the Anvil (a small sprite tool it drives over MCP), synthesised the sound effects, and wrote the neighbours' chatter, the tutorial and the page. The trick we're proudest of is the playtest bot: Claude wrote a bot that plays whole streets through the real controls in five styles (careful, relaxed, lazy, never turning, random). When TheGrumpyGameDev's playtest said there was nothing to do but put greens next to browns, the bot proved it: dropping scraps in random columns finished as fast as careful play. Claude redesigned the rules (heap heat, mulch, four new scraps from new neighbours, crisp packets you fork out) and added a guided tutorial, then re-ran the bot until skill mattered: relaxed play about 23 minutes, random about 41, finding the cat about 11. AI made the game; there is no AI inside the gameplay.
+
+**List of Team Members (name or pseudonyms)**
+
+> TheGrumpyGameDev (idea, design decisions, playtesting); Claude Code, an AI agent by Anthropic (code, art, sound, writing, tuning)
+
+**Theme Use**
+
+> You are the compost bin at the end of grey Ash Street. Our solarpunk isn't a gleaming future handed down; it's a street rebuilt from its own rubbish. Peels and leaves rot into compost, compost grows gardens, and every garden brings a solar roof, vines, a rain barrel, a wind turbine or a rooftop farm, plus a neighbour with new scraps, while the smog lifts to blue sky. The twist: the hero is the bin, and the work is rot.
